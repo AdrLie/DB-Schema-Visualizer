@@ -1,0 +1,20 @@
+{
+  "name": "@schemaflow/schema-analyzer",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@schemaflow/schema-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@schemaflow/eslint-config": "workspace:*",
+    "@schemaflow/tsconfig": "workspace:*",
+    "typescript": "^5.6.2",
+    "vitest": "^4.1.2"
+  }
+}

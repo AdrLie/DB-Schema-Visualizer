@@ -1,0 +1,47 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  projects  Project[]
+}
+
+model Project {
+  id        String   @id @default(uuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  schemas   Schema[]
+}
+
+model Schema {
+  id        String          @id @default(uuid())
+  name      String
+  projectId String
+  project   Project         @relation(fields: [projectId], references: [id])
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  versions  SchemaVersion[]
+}
+
+model SchemaVersion {
+  id        String   @id @default(uuid())
+  schemaId  String
+  schema    Schema   @relation(fields: [schemaId], references: [id])
+  version   Int
+  payload   Json     // This holds the DatabaseSchema domain model (tables, relationships, enums)
+  canvas    Json     // This holds the CanvasState (xyflow node positions and edges)
+  createdAt DateTime @default(now())
+}

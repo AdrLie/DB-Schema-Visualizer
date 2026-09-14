@@ -1,0 +1,12 @@
+
+> web@0.1.0 dev /Users/adrianlie/Documents/adrians/DB-Schema-Visualizer/apps/web
+> next dev -p 4002
+
+▲ Next.js 16.3.5 (Turbopack)
+- Local:         http://localhost:4002
+- Network:       http://192.168.100.195:4002
+✓ Ready in 228ms
+✓ Running next.config.ts took 19ms
+
+ HEAD / 200 in 2.0s (next.js: 1911ms, application-code: 123ms)
+[?25h
