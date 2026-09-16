@@ -6,10 +6,12 @@ import { AuthController } from './auth.controller.js';
 import { JwtStrategy } from './jwt.strategy.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 
+const passportModule = PassportModule.register({ defaultStrategy: 'jwt' });
+
 @Module({
   imports: [
     PrismaModule,
-    PassportModule,
+    passportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'fallback_secret_key',
       signOptions: { expiresIn: '7d' },
@@ -17,6 +19,6 @@ import { PrismaModule } from '../prisma/prisma.module.js';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
-  exports: [AuthService],
+  exports: [AuthService, passportModule, JwtModule],
 })
 export class AuthModule {}

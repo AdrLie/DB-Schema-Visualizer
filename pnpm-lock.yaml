@@ -148,6 +148,9 @@ importers:
         specifier: ^11.0.3
         version: 11.1.1
     devDependencies:
+      '@tailwindcss/oxide-darwin-arm64':
+        specifier: ^4.3.3
+        version: 4.3.3
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.3.3
@@ -5349,8 +5352,7 @@ snapshots:
   '@tailwindcss/oxide-android-arm64@4.3.3':
     optional: true
 
-  '@tailwindcss/oxide-darwin-arm64@4.3.3':
-    optional: true
+  '@tailwindcss/oxide-darwin-arm64@4.3.3': {}
 
   '@tailwindcss/oxide-darwin-x64@4.3.3':
     optional: true

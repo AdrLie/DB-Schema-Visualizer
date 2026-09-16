@@ -24,6 +24,7 @@
     "uuid": "^11.0.3"
   },
   "devDependencies": {
+    "@tailwindcss/oxide-darwin-arm64": "^4.3.3",
     "@tailwindcss/postcss": "^4",
     "@types/dagre": "^0.7.52",
     "@types/node": "^20",
