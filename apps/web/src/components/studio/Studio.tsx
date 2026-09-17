@@ -12,16 +12,19 @@ import { TableEditorModal } from '../editor/TableEditorModal';
 import { ToastContainer, toastManager } from '../ui/Toast';
 import { AuthModal } from './AuthModal';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
+import { DbConnectModal } from './DbConnectModal';
+import { PushToDbModal } from './PushToDbModal';
+import { Database, PlayCircle } from 'lucide-react';
 
-/* ─── Autumn Harvest palette ───────────────────────────────
-   #ede0d4  text-primary   (cream)
-   #e6ccb2  text-secondary (warm beige)
-   #ddb892  accent-light   (tan)
-   #b08968  accent-mid     (medium brown)
-   #9c6644  accent-strong
-   #7f5539  accent-dark
-   bg:      #120a05        (deep warm black)
-   surface: #1c1009 / #231408
+/* ─── Earthy Green LIGHT palette ────────────────────────────
+   bg/canvas: #ffffff / #fafaf7  (clean white)
+   header:    rgba(255,255,255,0.95)
+   tables:    #e9f5db  (lightest green) ← table card bg
+   text:      #2a3d18  (deep forest)
+   muted:     #4a6030  (mid forest)
+   accent:    #718355  (darkest green)  ← buttons, active
+   mid:       #87986a
+   soft:      #97a97c
 ──────────────────────────────────────────────────────────── */
 
 const DEFAULT_SQL = `CREATE TABLE users (
@@ -82,6 +85,9 @@ export function Studio() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [aiEnabled, setAiEnabled] = useState(false);
+  const [showDbConnectModal, setShowDbConnectModal] = useState(false);
+  const [showPushModal, setShowPushModal] = useState(false);
+  const [lastDbCredentials, setLastDbCredentials] = useState<any>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -98,10 +104,30 @@ export function Studio() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setSqlCode(localStorage.getItem(currentStorageKey) || DEFAULT_SQL);
+      let savedSql = localStorage.getItem(currentStorageKey) || DEFAULT_SQL;
+      if (savedSql.trim().startsWith('-- No tables found')) {
+        savedSql = DEFAULT_SQL; // Fix broken state from previous bug
+      }
+      setSqlCode(savedSql);
       setDiagramName(localStorage.getItem(currentDiagramKey) || 'Untitled Diagram');
     }
-  }, [activeWorkspaceId, currentStorageKey, currentDiagramKey]);
+
+    if (activeWorkspaceId && token) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001'}/projects/${activeWorkspaceId}/schema`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.sqlCode) {
+          setSqlCode(data.sqlCode);
+        }
+        if (data && data.cardinalityMap) {
+          setCardinalityMap(data.cardinalityMap);
+        }
+      })
+      .catch(console.error);
+    }
+  }, [activeWorkspaceId, currentStorageKey, currentDiagramKey, token]);
 
   const parser = useMemo(() => new PostgresParser(), []);
   const exporter = useMemo(() => new PostgresExporter(), []);
@@ -122,7 +148,38 @@ export function Studio() {
     reader.readAsText(file); e.target.value = '';
   };
 
-  const handleSaveClick = () => toastManager.addToast('Diagram saved.', 'success');
+  const handleSaveClick = async () => {
+    if (activeWorkspaceId && token) {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001'}/projects/${activeWorkspaceId}/schema`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ sqlCode, cardinalityMap })
+        });
+        if (res.ok) {
+          toastManager.addToast('Diagram saved to cloud.', 'success');
+        } else {
+          toastManager.addToast('Failed to save to cloud.', 'error');
+        }
+      } catch (err) {
+        toastManager.addToast('Error saving to cloud.', 'error');
+      }
+    } else {
+      toastManager.addToast('Diagram saved locally.', 'success');
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSaveClick();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleSaveClick]);
+
   const handleShareClick = () => { navigator.clipboard.writeText(window.location.href); toastManager.addToast('Link copied!', 'info'); };
   const handleCardinalityChange = useCallback((id: string, c: Cardinality) => setCardinalityMap(p => ({ ...p, [id]: c })), []);
 
@@ -143,6 +200,14 @@ export function Studio() {
     setEditingTableId(null);
   }, [schema, editingTableId, exporter]);
 
+  const handleDeleteTable = useCallback((tableName: string) => {
+    if (!schema) return;
+    const tables = schema.tables.filter(t => t.name !== tableName);
+    const relationships = schema.relationships.filter(r => r.sourceTable !== tableName && r.targetTable !== tableName);
+    setSqlCode(exporter.export({ ...schema, tables, relationships }));
+    toastManager.addToast(`Table "${tableName}" deleted`, 'info');
+  }, [schema, exporter]);
+
   const handleAddTable = useCallback(() => {
     const names = schema?.tables.map(t => t.name) || [];
     let n = 'new_table'; let i = 1;
@@ -152,29 +217,29 @@ export function Studio() {
   }, [schema]);
 
   return (
-    <div className="w-full h-screen relative overflow-hidden font-sans flex flex-col" style={{ background: '#120a05' }}>
-      {/* Warm ambient glow */}
+    <div className="w-full h-screen relative overflow-hidden font-sans flex flex-col" style={{ background: '#fafaf7' }}>
+      {/* Subtle ambient glow */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] rounded-full opacity-15"
-          style={{ background: 'radial-gradient(ellipse, #b08968 0%, transparent 70%)', filter: 'blur(80px)' }} />
-        <div className="absolute top-0 right-0 w-[400px] h-[250px] opacity-8"
-          style={{ background: 'radial-gradient(ellipse, #7f5539 0%, transparent 70%)', filter: 'blur(60px)' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(ellipse, #b5c99a 0%, transparent 70%)', filter: 'blur(100px)' }} />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[300px] opacity-10"
+          style={{ background: 'radial-gradient(ellipse, #97a97c 0%, transparent 70%)', filter: 'blur(80px)' }} />
       </div>
 
       {/* ── Header ── */}
       <header className="relative z-50 h-[52px] shrink-0 flex items-center justify-between px-3 sm:px-4"
-        style={{ background: 'rgba(18,10,5,0.88)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(176,137,104,0.12)', boxShadow: '0 1px 0 rgba(176,137,104,0.06)' }}>
+        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(113,131,85,0.12)', boxShadow: '0 1px 0 rgba(113,131,85,0.06), 0 2px 8px rgba(0,0,0,0.04)' }}>
 
         {/* Left */}
         <div className="flex items-center gap-2 min-w-0">
           <WorkspaceSwitcher token={token} onLoginRequest={() => setShowAuthModal(true)} onLogout={handleLogout} activeWorkspaceId={activeWorkspaceId} onWorkspaceChange={setActiveWorkspaceId} />
-          <span className="hidden sm:block select-none" style={{ color: 'rgba(176,137,104,0.2)', fontSize: 18 }}>/</span>
+          <span className="hidden sm:block select-none" style={{ color: 'rgba(113,131,85,0.3)', fontSize: 18 }}>/</span>
           <div className="hidden sm:flex items-center gap-2 rounded-lg px-2.5 py-1.5 min-w-0 focus-within:ring-1 transition-all"
-            style={{ background: 'rgba(176,137,104,0.06)', border: '1px solid rgba(176,137,104,0.1)' }}>
-            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#ddb892' }} />
+            style={{ background: 'rgba(113,131,85,0.07)', border: '1px solid rgba(113,131,85,0.12)' }}>
+            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#87986a' }} />
             <input type="text" value={diagramName} onChange={e => setDiagramName(e.target.value)}
-              className="bg-transparent text-sm font-medium focus:outline-none w-32 sm:w-44 truncate placeholder:opacity-30"
-              style={{ color: '#ede0d4' }} placeholder="Untitled Diagram" />
+              className="bg-transparent text-sm font-medium focus:outline-none w-32 sm:w-44 truncate placeholder:opacity-40"
+              style={{ color: '#2a3d18' }} placeholder="Untitled Diagram" />
           </div>
         </div>
 
@@ -182,14 +247,14 @@ export function Studio() {
         <button onClick={() => setAiEnabled(v => !v)}
           className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-all duration-300 select-none absolute left-1/2 -translate-x-1/2"
           style={{
-            background: aiEnabled ? 'rgba(176,137,104,0.15)' : 'rgba(176,137,104,0.05)',
-            border: aiEnabled ? '1px solid rgba(176,137,104,0.3)' : '1px solid rgba(176,137,104,0.1)',
-            boxShadow: aiEnabled ? '0 0 12px rgba(176,137,104,0.2)' : 'none',
+            background: aiEnabled ? 'rgba(113,131,85,0.12)' : 'rgba(113,131,85,0.05)',
+            border: aiEnabled ? '1px solid rgba(113,131,85,0.3)' : '1px solid rgba(113,131,85,0.12)',
+            boxShadow: aiEnabled ? '0 0 12px rgba(113,131,85,0.15)' : 'none',
           }}>
-          <Sparkles className="w-3.5 h-3.5" style={{ color: aiEnabled ? '#ddb892' : 'rgba(176,137,104,0.4)' }} />
-          <span className="text-xs font-semibold transition-colors" style={{ color: aiEnabled ? '#ddb892' : 'rgba(176,137,104,0.35)' }}>AI</span>
+          <Sparkles className="w-3.5 h-3.5" style={{ color: aiEnabled ? '#718355' : 'rgba(113,131,85,0.4)' }} />
+          <span className="text-xs font-semibold transition-colors" style={{ color: aiEnabled ? '#718355' : 'rgba(113,131,85,0.4)' }}>AI</span>
           <div className="w-7 h-3.5 rounded-full transition-all duration-300 relative ml-0.5"
-            style={{ background: aiEnabled ? '#9c6644' : 'rgba(176,137,104,0.15)' }}>
+            style={{ background: aiEnabled ? '#87986a' : 'rgba(113,131,85,0.2)' }}>
             <div className="absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white shadow-sm transition-all duration-300"
               style={{ left: aiEnabled ? '13px' : '2px' }} />
           </div>
@@ -197,6 +262,12 @@ export function Studio() {
 
         {/* Right: actions */}
         <div className="flex items-center gap-1.5">
+          <button onClick={() => setShowPushModal(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg text-white transition-all shadow-sm bg-red-600 hover:bg-red-700">
+            <PlayCircle className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Push to DB</span>
+          </button>
+          <HBtn icon={<Database className="w-3.5 h-3.5" />} label="Connect DB" onClick={() => setShowDbConnectModal(true)} />
           <HBtn icon={<Save className="w-3.5 h-3.5" />} label="Save" onClick={handleSaveClick} />
           <HBtn icon={<Share2 className="w-3.5 h-3.5" />} label="Share" onClick={handleShareClick} hideOnMobile />
           <HBtn icon={<Upload className="w-3.5 h-3.5" />} label="Import" onClick={handleImportClick} hideOnMobile chevron />
@@ -216,26 +287,51 @@ export function Studio() {
         </div>
 
         {/* Canvas */}
-        <div className="flex-1 relative" style={{ background: 'rgba(18,10,5,0.4)' }}>
+        <div className="flex-1 relative" style={{ background: 'transparent' }}>
           {!isEditorOpen && (
             <button onClick={() => setIsEditorOpen(true)} title="Open Schema Editor"
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-50 p-2.5 rounded-full transition-all shadow-lg group flex items-center justify-center"
-              style={{ background: 'rgba(18,10,5,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(176,137,104,0.2)', color: '#b08968' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 0 16px rgba(176,137,104,0.25)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(176,137,104,0.45)'; (e.currentTarget as HTMLElement).style.color = '#ddb892'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = ''; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(176,137,104,0.2)'; (e.currentTarget as HTMLElement).style.color = '#b08968'; }}>
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-50 p-2.5 rounded-full transition-all shadow-md group flex items-center justify-center"
+              style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(113,131,85,0.2)', color: '#718355' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 0 16px rgba(113,131,85,0.2)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(113,131,85,0.4)'; (e.currentTarget as HTMLElement).style.color = '#4a6030'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(113,131,85,0.2)'; (e.currentTarget as HTMLElement).style.color = '#718355'; }}>
               <Code2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
             </button>
           )}
           {schema ? (
-            <SchemaCanvas schema={schema} onEditTable={setEditingTableId} onAddTable={handleAddTable} cardinalityMap={cardinalityMap} onCardinalityChange={handleCardinalityChange} />
+            <SchemaCanvas schema={schema} onEditTable={setEditingTableId} onAddTable={handleAddTable} onDeleteTable={handleDeleteTable} cardinalityMap={cardinalityMap} onCardinalityChange={handleCardinalityChange} />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-sm" style={{ color: 'rgba(176,137,104,0.4)' }}>Parsing schema…</div>
+            <div className="w-full h-full flex items-center justify-center text-sm" style={{ color: 'rgba(113,131,85,0.5)' }}>Parsing schema…</div>
           )}
         </div>
       </div>
 
       {isExporting && schema && <ExportModal schema={schema} onClose={() => setIsExporting(false)} />}
       {editingTableId && schema && <TableEditorModal table={schema.tables.find(t => t.name === editingTableId)!} allTableNames={schema.tables.map(t => t.name)} onSave={handleTableSave} onClose={() => setEditingTableId(null)} />}
+      {showDbConnectModal && (
+        <DbConnectModal
+          onClose={() => setShowDbConnectModal(false)}
+          onSuccess={(newSchema, credentials) => {
+            let sql = exporter.export(newSchema);
+            if (newSchema.tables.length === 0) {
+              sql = DEFAULT_SQL;
+              toastManager.addToast(`Database "${newSchema.name}" is empty. Loaded a template for you to design!`, 'info');
+            } else {
+              toastManager.addToast('Database imported successfully!', 'success');
+            }
+            setSqlCode(sql);
+            setDiagramName(`${newSchema.name} Schema`);
+            setLastDbCredentials(credentials);
+            setShowDbConnectModal(false);
+          }}
+        />
+      )}
+      {showPushModal && (
+        <PushToDbModal
+          onClose={() => setShowPushModal(false)}
+          sqlCode={sqlCode}
+          initialCredentials={lastDbCredentials}
+        />
+      )}
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onSuccess={handleAuthSuccess} />
       <ToastContainer />
     </div>
@@ -246,9 +342,9 @@ function HBtn({ icon, label, onClick, hideOnMobile = false, chevron = false }: {
   return (
     <button onClick={onClick}
       className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-150 ${hideOnMobile ? 'hidden sm:flex' : 'flex'}`}
-      style={{ background: 'rgba(176,137,104,0.07)', border: '1px solid rgba(176,137,104,0.12)', color: '#b08968' }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(176,137,104,0.13)'; (e.currentTarget as HTMLElement).style.color = '#ddb892'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(176,137,104,0.22)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(176,137,104,0.07)'; (e.currentTarget as HTMLElement).style.color = '#b08968'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(176,137,104,0.12)'; }}>
+      style={{ background: 'rgba(113,131,85,0.08)', border: '1px solid rgba(113,131,85,0.15)', color: '#4a6030' }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(113,131,85,0.15)'; (e.currentTarget as HTMLElement).style.color = '#2a3d18'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(113,131,85,0.25)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(113,131,85,0.08)'; (e.currentTarget as HTMLElement).style.color = '#4a6030'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(113,131,85,0.15)'; }}>
       {icon}
       <span className="hidden md:inline">{label}</span>
       {chevron && <ChevronDown className="w-3 h-3 opacity-40" />}

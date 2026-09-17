@@ -26,18 +26,18 @@ function GitHubIcon() {
 
 type Tab = 'signin' | 'signup';
 
-const INPUT_STYLE = { background: 'rgba(176,137,104,0.07)', border: '1px solid rgba(176,137,104,0.14)', color: '#ede0d4' };
-const INPUT_FOCUS = { border: '1px solid rgba(176,137,104,0.5)', boxShadow: '0 0 0 3px rgba(176,137,104,0.1)' };
+const INPUT_STYLE = { background: 'rgba(113,131,85,0.06)', border: '1px solid rgba(113,131,85,0.18)', color: '#2a3d18' };
+const INPUT_FOCUS = { border: '1px solid rgba(113,131,85,0.5)', boxShadow: '0 0 0 3px rgba(113,131,85,0.1)' };
 
 function AInput({ id, type, value, onChange, placeholder, icon: Icon, extra }: { id: string; type: string; value: string; onChange: (v: string) => void; placeholder: string; icon: any; extra?: React.ReactNode }) {
   return (
     <div className="relative">
-      <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: 'rgba(176,137,104,0.45)' }} />
+      <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: 'rgba(74,96,48,0.45)' }} />
       <input id={id} type={type} required value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm focus:outline-none transition-all placeholder:opacity-30"
+        className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm focus:outline-none transition-all placeholder:opacity-35"
         style={INPUT_STYLE}
         onFocus={e => Object.assign((e.currentTarget as HTMLElement).style, INPUT_FOCUS)}
-        onBlur={e => Object.assign((e.currentTarget as HTMLElement).style, { border: '1px solid rgba(176,137,104,0.14)', boxShadow: 'none' })} />
+        onBlur={e => Object.assign((e.currentTarget as HTMLElement).style, { border: '1px solid rgba(113,131,85,0.18)', boxShadow: 'none' })} />
       {extra}
     </div>
   );
@@ -73,31 +73,29 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
       <div className="px-7 pt-7 pb-7 font-sans">
         {/* Close */}
         <button onClick={onClose} className="absolute top-3.5 right-3.5 w-7 h-7 rounded-full flex items-center justify-center transition-all text-lg leading-none"
-          style={{ color: 'rgba(176,137,104,0.4)' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ddb892'; (e.currentTarget as HTMLElement).style.background = 'rgba(176,137,104,0.1)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(176,137,104,0.4)'; (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>×</button>
+          style={{ color: 'rgba(74,96,48,0.4)' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#4a6030'; (e.currentTarget as HTMLElement).style.background = 'rgba(113,131,85,0.1)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(74,96,48,0.4)'; (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>×</button>
 
         {/* Brand */}
         <div className="flex flex-col items-center mb-6">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3"
-            style={{ background: 'linear-gradient(135deg,#9c6644,#7f5539)', boxShadow: '0 0 24px rgba(127,85,57,0.4)' }}>
-            <Database className="w-5 h-5 text-white" />
+          <div className="flex justify-center mb-2 mt-4 relative h-16 w-full">
+            <img src="/logo.svg" alt="Schma Logo" className="absolute w-48 max-w-none pointer-events-none" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
           </div>
-          <h1 className="text-lg font-bold" style={{ color: '#ede0d4' }}>SchemaFlow</h1>
-          <p className="text-xs mt-0.5" style={{ color: 'rgba(176,137,104,0.5)' }}>
+          <p className="text-xs mt-0.5" style={{ color: 'rgba(74,96,48,0.55)' }}>
             {tab === 'signin' ? 'Sign in to your account' : 'Create a new account'}
           </p>
         </div>
 
         {/* Tabs */}
-        <div className="flex rounded-xl p-1 mb-5" style={{ background: 'rgba(176,137,104,0.06)', border: '1px solid rgba(176,137,104,0.1)' }}>
+        <div className="flex rounded-xl p-1 mb-5" style={{ background: 'rgba(113,131,85,0.07)', border: '1px solid rgba(113,131,85,0.12)' }}>
           {(['signin', 'signup'] as Tab[]).map(t => (
             <button key={t} id={`auth-tab-${t}`} onClick={() => switchTab(t)}
               className="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
               style={{
-                color: tab === t ? '#ede0d4' : 'rgba(176,137,104,0.4)',
-                background: tab === t ? 'rgba(176,137,104,0.15)' : 'transparent',
-                boxShadow: tab === t ? 'inset 0 1px 0 rgba(221,184,146,0.1)' : 'none',
+                color: tab === t ? '#2a3d18' : 'rgba(74,96,48,0.45)',
+                background: tab === t ? '#ffffff' : 'transparent',
+                boxShadow: tab === t ? '0 1px 3px rgba(42,61,24,0.12)' : 'none',
               }}>
               {t === 'signin' ? 'Sign In' : 'Sign Up'}
             </button>
@@ -110,9 +108,9 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             <button key={s.key} id={`auth-${s.key}-btn`}
               onClick={() => toastManager.addToast(`${s.label} login coming soon`, 'info')}
               className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
-              style={{ background: 'rgba(176,137,104,0.07)', border: '1px solid rgba(176,137,104,0.12)', color: '#b08968' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(176,137,104,0.12)'; (e.currentTarget as HTMLElement).style.color = '#ddb892'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(176,137,104,0.2)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(176,137,104,0.07)'; (e.currentTarget as HTMLElement).style.color = '#b08968'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(176,137,104,0.12)'; }}>
+              style={{ background: 'rgba(113,131,85,0.07)', border: '1px solid rgba(113,131,85,0.14)', color: '#4a6030' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(113,131,85,0.12)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(113,131,85,0.25)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(113,131,85,0.07)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(113,131,85,0.14)'; }}>
               {s.icon} {s.label}
             </button>
           ))}
@@ -120,9 +118,9 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
         {/* Divider */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex-1 h-px" style={{ background: 'rgba(176,137,104,0.1)' }} />
-          <span className="text-[10px] font-medium" style={{ color: 'rgba(176,137,104,0.35)' }}>or email</span>
-          <div className="flex-1 h-px" style={{ background: 'rgba(176,137,104,0.1)' }} />
+          <div className="flex-1 h-px" style={{ background: 'rgba(113,131,85,0.15)' }} />
+          <span className="text-[10px] font-medium" style={{ color: 'rgba(74,96,48,0.4)' }}>or email</span>
+          <div className="flex-1 h-px" style={{ background: 'rgba(113,131,85,0.15)' }} />
         </div>
 
         {/* Form */}
@@ -131,17 +129,17 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
           <AInput id="auth-password" type={showPassword ? 'text' : 'password'} value={password} onChange={setPassword} placeholder="Password" icon={Lock}
             extra={<button type="button" tabIndex={-1} onClick={() => setShowPassword(v => !v)}
               className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-              style={{ color: 'rgba(176,137,104,0.4)' }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#b08968'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(176,137,104,0.4)'}>
+              style={{ color: 'rgba(74,96,48,0.4)' }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#4a6030'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(74,96,48,0.4)'}>
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>} />
           {tab === 'signup' && <AInput id="auth-confirm-password" type={showPassword ? 'text' : 'password'} value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm password" icon={Lock} />}
           {tab === 'signin' && (
             <div className="text-right">
-              <button type="button" className="text-[11px] transition-colors" style={{ color: 'rgba(176,137,104,0.4)' }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#b08968'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(176,137,104,0.4)'}
+              <button type="button" className="text-[11px] transition-colors" style={{ color: 'rgba(74,96,48,0.45)' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#4a6030'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(74,96,48,0.45)'}
                 onClick={() => toastManager.addToast('Password reset coming soon', 'info')}>
                 Forgot password?
               </button>
@@ -149,20 +147,20 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
           )}
 
           <button id="auth-submit-btn" type="submit" disabled={isLoading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 mt-1 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:brightness-110 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-            style={{ background: 'linear-gradient(135deg,#9c6644,#7f5539)', boxShadow: isLoading ? 'none' : '0 0 20px rgba(127,85,57,0.35), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
+            className="w-full flex items-center justify-center gap-2 py-2.5 mt-1 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:brightness-105 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            style={{ background: 'linear-gradient(135deg,#87986a,#718355)', boxShadow: isLoading ? 'none' : '0 4px 16px rgba(113,131,85,0.35), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
             {isLoading
               ? <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Please wait…</>
               : <>{tab === 'signin' ? 'Sign In' : 'Create Account'}<ArrowRight className="w-4 h-4" /></>}
           </button>
         </form>
 
-        <p className="text-center text-xs mt-5" style={{ color: 'rgba(176,137,104,0.4)' }}>
+        <p className="text-center text-xs mt-5" style={{ color: 'rgba(74,96,48,0.45)' }}>
           {tab === 'signin' ? "Don't have an account? " : 'Already have an account? '}
           <button type="button" onClick={() => switchTab(tab === 'signin' ? 'signup' : 'signin')}
-            className="font-semibold transition-colors" style={{ color: '#b08968' }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#ddb892'}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#b08968'}>
+            className="font-semibold transition-colors" style={{ color: '#718355' }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#4a6030'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#718355'}>
             {tab === 'signin' ? 'Sign up free' : 'Sign in'}
           </button>
         </p>

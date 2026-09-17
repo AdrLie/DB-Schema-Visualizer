@@ -10,5 +10,8 @@
   "license": "MIT",
   "dependencies": {
     "typescript": "^5.6.2"
+  },
+  "devDependencies": {
+    "@schemaflow/tsconfig": "workspace:*"
   }
 }

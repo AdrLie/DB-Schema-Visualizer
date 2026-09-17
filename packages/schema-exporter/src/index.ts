@@ -60,6 +60,10 @@ export class PrismaExporter {
 
 export class PostgresExporter {
   export(schema: DatabaseSchema): string {
+    if (!schema.tables || schema.tables.length === 0) {
+      return `-- No tables found in database "${schema.name}"`;
+    }
+
     let result = '';
 
     for (const table of schema.tables) {

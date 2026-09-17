@@ -1,10 +1,5 @@
-'use client';
-import dynamic from 'next/dynamic';
-
-const Studio = dynamic(() => import('@/components/studio/Studio').then(mod => mod.Studio), {
-  ssr: false,
-});
+import { LandingPage } from '@/components/landing/LandingPage';
 
 export default function Home() {
-  return <Studio />;
+  return <LandingPage />;
 }
